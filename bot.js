@@ -1,8 +1,8 @@
 var telegram = require('telegram-bot-api');
-var token = require('token')
+var token = require('./token');
 
 var api = new telegram({
-    token: token,
+    token: token.id,
     updates: {
         enabled: true,
         get_interval: 1000
@@ -17,28 +17,13 @@ api.on('message', function(message)
     // And react accordingly
     // We consider that only text messages can be received here
 
-    if(chat_id == 568810006) {
-        api.sendMessage({
-            chat_id: message.chat.id,
-            text: "Hi, " + message.chat.first_name
-        })
-            .then(function(message)
-            {
-                console.log(message, "your id:", message.chat.id);
-            })
-            .catch(function(err)
-            {
-                console.log(err);
-            });
-    }
-
     api.sendMessage({
         chat_id: message.chat.id,
-        text: message.text + " your:" + JSON.stringify(message.chat)
+        text: message.text ? message.text : 'This message doesn\'t contain text :('
     })
         .then(function(message)
         {
-            console.log(message, "your id:", message.chat.id);
+            console.log(message);
         })
         .catch(function(err)
         {
