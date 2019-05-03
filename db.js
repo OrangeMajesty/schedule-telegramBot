@@ -30,17 +30,17 @@ var con = mysql.createPool({
 
 module.exports.getDeps = function () {
     return new Promise(function(resolve) {
-        var deps = new Array();
+        var deps = [];
 
         con.getConnection(function(err, connect) {
-            con.query('SELECT * FROM tb_department', function(error, result, fields){
+            con.query('SELECT * FROM tb_department', function(error, result){
 
                 if (err) throw error;
 
                 if(result)
-                    for (var i = 0; i != result.length; i++){
+                    for (var i = 0; i !== result.length; i++){
 
-                        let i_dep = new Object();
+                        let i_dep = {};
 
                         i_dep.id = result[i].id_department;
                         i_dep.name = result[i].name_department;
@@ -61,17 +61,17 @@ module.exports.getDeps = function () {
 
 module.exports.getGroups = function () {
     return new Promise(function(resolve) {
-        var deps = new Array();
+        var deps = [];
 
         con.getConnection(function(err, connect) {
-            con.query('SELECT * FROM tb_group', function (error, result, fields) {
+            con.query('SELECT * FROM tb_group', function (error, result) {
 
                 if (err) throw error;
 
                 if (result)
-                    for (var i = 0; i != result.length; i++) {
+                    for (var i = 0; i !== result.length; i++) {
 
-                        let i_dep = new Object();
+                        let i_dep = {};
 
                         i_dep.id = result[i].id_group;
                         i_dep.name = result[i].name_group;
@@ -90,17 +90,17 @@ module.exports.getGroups = function () {
 
 module.exports.getGroupsById = function (id) {
     return new Promise(function(resolve) {
-        var deps = new Array();
+        var deps = [];
 
         con.getConnection(function(err, connect) {
-            con.query('SELECT * FROM tb_group WHERE `id_department` = ?', id, function (error, result, fields) {
+            con.query('SELECT * FROM tb_group WHERE `id_department` = ?', id, function (error, result) {
 
                 if (err) throw error;
 
                 if (result)
-                    for (var i = 0; i != result.length; i++) {
+                    for (var i = 0; i !== result.length; i++) {
 
-                        let i_dep = new Object();
+                        let i_dep = {};
 
                         i_dep.id = result[i].id_group;
                         i_dep.name = result[i].name_group;

@@ -37,8 +37,6 @@ var startButton = {
 
 api.on('message', function(message)
 {
-    var chat_id = message.chat.id;
-
     api.sendMessage({
         chat_id: message.chat.id,
         text: "Вас приветствует Актюбинский Высший политехнический колледж\n\nВыберите команду.",
@@ -89,25 +87,25 @@ async function bind(user, level, data = null) {
                 text: "Вы успешно привязаны к группе."
             });
             break;
-        case 1:
+        case 1:{
             console.log(data);
             let groups = await db.getGroupsById(data);
 
-            var genButton = new Object();
+            var genButton = {};
 
-            genButton.inline_keyboard = new Array();
-            genButton.inline_keyboard.push(new Array());
+            genButton.inline_keyboard = [];
+            genButton.inline_keyboard.push([]);
             let col = 0;
 
-            for (var groupsIndex = 0; groupsIndex != groups.length; groupsIndex++) {
+            for (var groupsIndex = 0; groupsIndex !== groups.length; groupsIndex++) {
 
-                var tempButton = new Object();
+                var tempButton = {};
 
                 tempButton.text = groups[groupsIndex].name;
                 tempButton.callback_data = 'bind_' + groups[groupsIndex].class + ':' + groups[groupsIndex].name;
 
-                if(groupsIndex%4 == 0) {
-                    genButton.inline_keyboard.push(new Array());
+                if(groupsIndex%4 === 0) {
+                    genButton.inline_keyboard.push([]);
                     col++;
                 }
 
@@ -120,21 +118,22 @@ async function bind(user, level, data = null) {
                 reply_markup: JSON.stringify(genButton)
             });
             break;
-        case 0:
+        }
+        case 0:{
             console.log(user);
             let deps = await db.getDeps();
 
-            var genButton = new Object();
+            var genButton = {};
 
-            genButton.inline_keyboard = new Array();
+            genButton.inline_keyboard = [];
 
-            for (var depsIndex = 0; depsIndex != deps.length; depsIndex++) {
+            for (var depsIndex = 0; depsIndex !== deps.length; depsIndex++) {
 
-                var tempButton = new Object();
+                var tempButton = {};
                 tempButton.text = deps[depsIndex].name;
 
                 tempButton.callback_data = 'bind_' + deps[depsIndex].class + ':' + deps[depsIndex].id;
-                genButton.inline_keyboard.push(new Array());
+                genButton.inline_keyboard.push([]);
                 genButton.inline_keyboard[depsIndex].push(tempButton);
             }
 
@@ -145,6 +144,7 @@ async function bind(user, level, data = null) {
             });
 
             break;
+        }
     }
 
 }
