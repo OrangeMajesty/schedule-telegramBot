@@ -141,8 +141,19 @@ async function bind(user, level, data = null) {
                     }
                 }
 
+            let username = null;
+
+            if(user.username) {
+                username = user.username;
+            }  else {
+                if(user.first_name)
+                    username = user.first_name;
+                if(user.last_name)
+                    username += ' ' + user.last_name;
+            }
+
             if(flagDub === true) {
-                db.addUser(user.first_name + ' ' + user.last_name, user.id, data);
+                db.addUser(username, user.id, data);
                 api.sendMessage({
                     chat_id: user.id,
                     text: "Вы успешно привязаны к группе."
