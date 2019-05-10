@@ -54,19 +54,21 @@ api.on('inline.callback.query', function(rep) {
     let _case = rep.data.split(':')[0];
     let _data = rep.data.split(':')[1];
 
+    var chat = rep.message.chat;
+
     console.log(_case);
 
     switch(_case) {
-        case 'config': config(rep.message.chat); break;
+        case 'config': config(chat); break;
 
-        case 'clear': clear(rep.message.chat); break;
-        case 'clear_Groups': clearGroup(rep.message.chat, _data); break;
+        case 'clear': clear(chat); break;
+        case 'clear_Groups': clearGroup(chat, _data); break;
 
-        case 'bind': bind(rep.message.chat, 0); break;
-        case 'bind_Deps': bind(rep.message.chat, 1, _data); break;
-        case 'bind_Groups': bind(rep.message.chat, 2, _data); break;
+        case 'bind': bind(chat, 0); break;
+        case 'bind_Deps': bind(chat, 1, _data); break;
+        case 'bind_Groups': bind(chat, 2, _data); break;
 
-        default: help(rep.message.chat);
+        default: help(chat);
     }
 
 });

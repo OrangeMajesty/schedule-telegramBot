@@ -163,7 +163,7 @@ module.exports.decoupling = function (id) {
     return new Promise(function(resolve) {
         con.getConnection(function(err, connect) {
 
-            con.query('DELETE FROM `tb_user` WHERE `tb_user`.`id_user` = ?', id, function (error, result) {
+            con.query('DELETE FROM `tb_user` WHERE `id_user` = ?', id, function (error) {
 
                 if (err) throw error;
 
@@ -180,7 +180,7 @@ module.exports.addUser = function (username, telId, depId) {
         con.getConnection(function(err, connect) {
             let setData = [username, telId, depId];
 
-            con.query('INSERT INTO `tb_user` (`id_user`, `user_name`, `id_telegram`, `id_group`) VALUES (NULL, ?, ?, ?);', setData, function (error, result) {
+            con.query('INSERT INTO `tb_user` (`id_user`, `user_name`, `id_telegram`, `id_group`) VALUES (NULL, ?, ?, ?);', setData, function (error) {
 
                 if (err) throw error;
 
