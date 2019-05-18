@@ -164,11 +164,52 @@ module.exports.decoupling = function (id) {
         con.getConnection(function(err, connect) {
 
             con.query('DELETE FROM `tb_user` WHERE `id_user` = ?', id, function (error) {
-
                 if (err) throw error;
+
+
 
                 connect.release();
                 resolve(true);
+            });
+        });
+
+    });
+};
+
+module.exports.getScheduleByGroup = function (id) {
+    return new Promise(function(resolve) {
+        var schedule = [];
+        con.getConnection(function(err, connect) {
+
+            console.log(id);
+            con.query('SELECT * FROM `tb_schedule` inner join tb_cabinet on tb_schedule.id_cabinet = tb_cabinet.id_cabinet ' +
+                'inner join tb_teacher on tb_schedule.id_teacher = tb_teacher.id_teacher ' +
+                'inner join tb_subject on tb_schedule.id_subject = tb_subject.id_subject ' +
+                'inner join tb_time on tb_schedule.id_time = tb_time.id_time ' +
+                'WHERE `date` >= cast((now()) as date) ' +
+                'AND `date` < cast((now() + interval 1 day) as date) ' +
+                'AND `id_group` = ?', id, function (error, result) {
+
+                if (err) throw error;
+
+                if (result)
+                    for (var i = 0; i !== result.length; i++) {
+
+                        let el = {};
+
+                        el.id = result[i].id_schedule;
+                        el.cabinet = result[i].name_cabinet;
+                        el.teacher = result[i].compact_name ;
+                        el.subject = result[i].name_subject ;
+                        el.date = result[i].time ;
+                        el.num = result[i].id_time ;
+                        // el.class = 'Groups';
+
+                        schedule.push(el);
+                    }
+
+                connect.release();
+                resolve(schedule);
             });
         });
 

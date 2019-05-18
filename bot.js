@@ -10,37 +10,43 @@ var api = new telegram({
     }
 });
 
-var startButton = {
-    inline_keyboard: [
-        [
-            {
-                text: 'Привязать группу',
-                callback_data: 'bind'
-            },
-            {
-                text: 'Отвязать группу',
-                callback_data: 'clear'
-            }
-        ],
-        [
-            {
-                text: 'Настройки',
-                callback_data: 'config'
-            }
-        ],
-        [
-            {
-                text: 'Помощь',
-                callback_data: 'help'
-            }
+api.on('message', function(message) {
+    if(isBan(message.chat.id) == true)
+        return;
+
+    var startButton = {
+        inline_keyboard: [
+            [
+                {
+                    text: 'Получить расписание',
+                    callback_data: 'getSchedule'
+                }
+            ],
+            [
+                {
+                    text: 'Привязать группу',
+                    callback_data: 'bind'
+                },
+                {
+                    text: 'Отвязать группу',
+                    callback_data: 'clear'
+                }
+            ],
+            [
+                {
+                    text: 'Настройки',
+                    callback_data: 'config'
+                }
+            ],
+            [
+                {
+                    text: 'Помощь',
+                    callback_data: 'help'
+                }
+            ]
         ]
-    ]
-};
+    };
 
-
-
-api.on('message', function(message)
-{
     api.sendMessage({
         chat_id: message.chat.id,
         text: "Вас приветствует Актюбинский Высший политехнический колледж\n\nВыберите команду",
@@ -50,6 +56,8 @@ api.on('message', function(message)
 });
 
 api.on('inline.callback.query', function(rep) {
+    if(isBan(rep.message.chat.id) == true)
+        return;
 
     let _case = rep.data.split(':')[0];
     let _data = rep.data.split(':')[1];
@@ -68,12 +76,68 @@ api.on('inline.callback.query', function(rep) {
         case 'bind_Deps': bind(chat, 1, _data); break;
         case 'bind_Groups': bind(chat, 2, _data); break;
 
+        case 'getSchedule': getSchedule(chat); break;
+
         default: help(chat);
     }
 
 });
 
+async function isBan(id) {
+    var ban = {
+        415106045: true
+    };
+
+    if(ban[id] !== null) {
+        api.sendMessage({
+            chat_id: id,
+            text: "Бан!"
+        });
+        return true;
+    }
+    return false;
+}
+
+async function getSchedule(user) {
+    if(isBan(user.id) == true)
+        return;
+
+    var users = await db.getGroupsByUser(user.id);
+
+    for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
+
+        let schedule = new Array();
+        let schedule_data = await db.getScheduleByGroup(users[usersIndex].idGroup);
+
+        schedule_data.forEach(function (el) {
+            schedule[el.num] = {
+                'cabinet': el.cabinet,
+                'teacher': el.teacher,
+                'subject': el.subject,
+                'date': el.date
+            };
+        });
+
+        let text = '';
+
+        schedule.forEach(function (el) {
+            // console.log(el);
+            if(el !== null)
+                text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
+        });
+
+        if(text)
+            api.sendMessage({
+                chat_id: user.id,
+                text: text
+            });
+    }
+}
+
 async function config(user) {
+    if(isBan(user.id) == true)
+        return;
+    // await db.getScheduleByUserId(user.id);
     api.sendMessage({
         chat_id: user.id,
         text: ".config"
@@ -81,6 +145,9 @@ async function config(user) {
 }
 
 async function clear(user) {
+    if(isBan(user.id) == true)
+        return;
+
     let users = await db.getGroupsByUser(user.id);
 
     var genButton = {};
@@ -112,6 +179,9 @@ async function clear(user) {
 }
 
 async function clearGroup(user, idGroup) {
+    if(isBan(user.id) == true)
+        return;
+
     await db.decoupling(idGroup);
 
     api.sendMessage({
@@ -121,6 +191,9 @@ async function clearGroup(user, idGroup) {
 }
 
 async function help(user) {
+    if(isBan(user.id) == true)
+        return;
+
     api.sendMessage({
         chat_id: user.id,
         text: ".help"
@@ -128,6 +201,9 @@ async function help(user) {
 }
 
 async function bind(user, level, data = null) {
+    if(isBan(user.id) == true)
+        return;
+
     switch(level) {
         case 2:
 
