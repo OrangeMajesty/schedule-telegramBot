@@ -2,6 +2,8 @@ var telegram = require('telegram-bot-api');
 var token = require('./token');
 var db = require('./db.js');
 
+var updateHour = 12;
+
 var api = new telegram({
     token: token.id,
     updates: {
@@ -10,14 +12,16 @@ var api = new telegram({
     }
 });
 
-// function do_this(){
-//     var now = new Date();
-//     var currentHour = now.getHours();
-//     if(currentHour < 9 && currentHour > 18) return;
-//     //your code
-// }
-//
-// setInterval( function(){ do_this(); } , 1000*60);
+async function update(){
+
+    var now = new Date();
+
+    if(now.getHours() == updateHour)
+        sendler();
+
+}
+
+setInterval( function(){ update(); } , 1000*60*60);
 
 async function sendler() {
     let users = await db.getUsersId();
@@ -30,8 +34,6 @@ async function sendler() {
         }
 
 }
-
-sendler();
 
 api.on('message', async function(message) {
     if((await isBan(message.chat.id)))
