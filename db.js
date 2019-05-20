@@ -127,6 +127,61 @@ module.exports.getGroupsById = function (id) {
     });
 };
 
+module.exports.getUsers = function () {
+    return new Promise(function(resolve) {
+        var users = [];
+
+        con.getConnection(function(err, connect) {
+            con.query('SELECT * FROM `tb_user`', '', function (error, result) {
+
+                if (err) throw err;
+
+                if (result)
+                    for (var i = 0; i !== result.length; i++) {
+
+                        let el = {};
+
+                        // el.id = result[i].id_user;
+                        el.name = result[i].user_name;
+                        el.id = result[i].id_telegram;
+                        el.class = 'Users';
+
+                        users.push(el);
+                    }
+                connect.release();
+                resolve(users);
+            });
+        });
+
+    });
+};
+
+module.exports.getUsersId = function () {
+    return new Promise(function(resolve) {
+        var users = [];
+
+        con.getConnection(function(err, connect) {
+            con.query('SELECT `id_telegram` FROM `tb_user` GROUP BY `id_telegram`', '', function (error, result) {
+
+                if (err) throw error;
+
+                if (result)
+                    for (var i = 0; i !== result.length; i++) {
+
+                        let el = {};
+
+                        el.id = result[i].id_telegram;
+
+                        users.push(el);
+                    }
+                connect.release();
+                resolve(users);
+            });
+        });
+
+    });
+};
+
 module.exports.getGroupsByUser = function (id) {
     return new Promise(function(resolve) {
         var deps = [];

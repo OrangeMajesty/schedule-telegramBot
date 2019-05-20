@@ -10,6 +10,29 @@ var api = new telegram({
     }
 });
 
+// function do_this(){
+//     var now = new Date();
+//     var currentHour = now.getHours();
+//     if(currentHour < 9 && currentHour > 18) return;
+//     //your code
+// }
+//
+// setInterval( function(){ do_this(); } , 1000*60);
+
+async function sendler() {
+    let users = await db.getUsersId();
+
+    if(users)
+        for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
+            await getSchedule(users[usersIndex]);
+            console.log(users[usersIndex]);
+
+        }
+
+}
+
+sendler();
+
 api.on('message', async function(message) {
     if((await isBan(message.chat.id)))
         return;
@@ -138,7 +161,7 @@ async function getSchedule(user) {
     }
 }
 
-async function config(user) {
+    async function config(user) {
     // await db.getScheduleByUserId(user.id);
     api.sendMessage({
         chat_id: user.id,
