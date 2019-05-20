@@ -21,8 +21,6 @@ async function update(){
 
 }
 
-setInterval( function(){ update(); } , 1000*60*60);
-
 async function sendler() {
     let users = await db.getUsersId();
 
@@ -34,6 +32,8 @@ async function sendler() {
         }
 
 }
+
+setInterval( function(){ update(); } , 1000*60*60);
 
 api.on('message', async function(message) {
     if((await isBan(message.chat.id)))
@@ -55,18 +55,6 @@ api.on('message', async function(message) {
                 {
                     text: 'Отвязать группу',
                     callback_data: 'clear'
-                }
-            ],
-            [
-                {
-                    text: 'Настройки',
-                    callback_data: 'config'
-                }
-            ],
-            [
-                {
-                    text: 'Помощь',
-                    callback_data: 'help'
                 }
             ]
         ]
@@ -162,13 +150,6 @@ async function getSchedule(user) {
     }
 }
 
-    async function config(user) {
-    // await db.getScheduleByUserId(user.id);
-    api.sendMessage({
-        chat_id: user.id,
-        text: ".config"
-    });
-}
 
 async function clear(user) {
 
@@ -209,14 +190,6 @@ async function clearGroup(user, idGroup) {
     api.sendMessage({
         chat_id: user.id,
         text: "Вы отвязали группу"
-    });
-}
-
-async function help(user) {
-
-    api.sendMessage({
-        chat_id: user.id,
-        text: ".help"
     });
 }
 
