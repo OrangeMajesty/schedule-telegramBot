@@ -84,11 +84,12 @@ api.on('inline.callback.query', async function(rep) {
 });
 
 async function isBan(id) {
+
     var ban = {
-        415106045: true
+        // 419883796: true
     };
 
-    if(ban[id] !== null) {
+    if(ban[id]) {
         api.sendMessage({
             chat_id: id,
             text: "Бан!"
@@ -128,6 +129,11 @@ async function getSchedule(user) {
             api.sendMessage({
                 chat_id: user.id,
                 text: text
+            });
+        else
+            api.sendMessage({
+                chat_id: user.id,
+                text: 'Расписание отсутствует'
             });
     }
 }
