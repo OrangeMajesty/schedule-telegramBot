@@ -133,24 +133,26 @@ module.exports.getGroupsByUser = function (id) {
 
         con.getConnection(function(err, connect) {
 
-                if (err) throw err;
+
                 con.query('SELECT * FROM `tb_user`\n' +
                                 'inner join tb_group on tb_user.id_group = tb_group.id_group\n' +
                                 'WHERE `id_telegram` = ?', id, function (error, result) {
-                if (result)
-                    for (var i = 0; i !== result.length; i++) {
 
-                        let i_dep = {};
+                    if (error) throw error;
+                    if (result)
+                        for (var i = 0; i !== result.length; i++) {
 
-                        i_dep.id = result[i].id_user;
-                        i_dep.name = result[i].user_name;
-                        i_dep.idTel = result[i].id_telegram ;
-                        i_dep.nameGroup = result[i].name_group ;
-                        i_dep.idGroup = result[i].id_group ;
-                        i_dep.class = 'Groups';
+                            let i_dep = {};
 
-                        deps.push(i_dep);
-                    }
+                            i_dep.id = result[i].id_user;
+                            i_dep.name = result[i].user_name;
+                            i_dep.idTel = result[i].id_telegram ;
+                            i_dep.nameGroup = result[i].name_group ;
+                            i_dep.idGroup = result[i].id_group ;
+                            i_dep.class = 'Groups';
+
+                            deps.push(i_dep);
+                        }
                 connect.release();
                 resolve(deps);
             });
@@ -190,7 +192,7 @@ module.exports.getScheduleByGroup = function (id) {
                 'AND `date` < cast((now() + interval 1 day) as date) ' +
                 'AND `id_group` = ?', id, function (error, result) {
 
-                if (err) throw error;
+                if (error) throw error;
 
                 if (result)
                     for (var i = 0; i !== result.length; i++) {

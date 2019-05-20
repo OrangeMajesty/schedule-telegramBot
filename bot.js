@@ -10,8 +10,8 @@ var api = new telegram({
     }
 });
 
-api.on('message', function(message) {
-    if(isBan(message.chat.id) == true)
+api.on('message', async function(message) {
+    if((await isBan(message.chat.id)))
         return;
 
     var startButton = {
@@ -55,8 +55,8 @@ api.on('message', function(message) {
 
 });
 
-api.on('inline.callback.query', function(rep) {
-    if(isBan(rep.message.chat.id) == true)
+api.on('inline.callback.query', async function(rep) {
+    if((await isBan(rep.message.chat.id)))
         return;
 
     let _case = rep.data.split(':')[0];
@@ -99,8 +99,6 @@ async function isBan(id) {
 }
 
 async function getSchedule(user) {
-    if(isBan(user.id) == true)
-        return;
 
     var users = await db.getGroupsByUser(user.id);
 
@@ -135,8 +133,6 @@ async function getSchedule(user) {
 }
 
 async function config(user) {
-    if(isBan(user.id) == true)
-        return;
     // await db.getScheduleByUserId(user.id);
     api.sendMessage({
         chat_id: user.id,
@@ -145,8 +141,6 @@ async function config(user) {
 }
 
 async function clear(user) {
-    if(isBan(user.id) == true)
-        return;
 
     let users = await db.getGroupsByUser(user.id);
 
@@ -179,8 +173,6 @@ async function clear(user) {
 }
 
 async function clearGroup(user, idGroup) {
-    if(isBan(user.id) == true)
-        return;
 
     await db.decoupling(idGroup);
 
@@ -191,8 +183,6 @@ async function clearGroup(user, idGroup) {
 }
 
 async function help(user) {
-    if(isBan(user.id) == true)
-        return;
 
     api.sendMessage({
         chat_id: user.id,
@@ -201,8 +191,6 @@ async function help(user) {
 }
 
 async function bind(user, level, data = null) {
-    if(isBan(user.id) == true)
-        return;
 
     switch(level) {
         case 2:
