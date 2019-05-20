@@ -143,7 +143,6 @@ async function getSchedule(user) {
         let text = '';
 
         schedule.forEach(function (el) {
-            // console.log(el);
             if(el !== null)
                 text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
         });
@@ -151,12 +150,12 @@ async function getSchedule(user) {
         if(text)
             api.sendMessage({
                 chat_id: user.id,
-                text: text
+                text: users[usersIndex].nameGroup + '\n---------------\n' + text
             });
         else
             api.sendMessage({
                 chat_id: user.id,
-                text: 'Расписание отсутствует'
+                text: users[usersIndex].nameGroup + '\n---------------\n' + 'Расписание отсутствует'
             });
     }
 }
