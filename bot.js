@@ -2,7 +2,10 @@ var telegram = require('telegram-bot-api');
 var token = require('./token');
 var db = require('./db.js');
 
-var updateHour = 12;
+
+var updateHour = 18;
+
+
 
 var api = new telegram({
     token: token.id,
@@ -18,22 +21,25 @@ async function update(){
 
     if(now.getHours() == updateHour)
         sendler();
+    // Фильтрация по неделям
 
 }
 
 async function sendler() {
+
     let users = await db.getUsersId();
 
     if(users)
         for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
-            await getSchedule(users[usersIndex]);
+            await getReplacement(users[usersIndex]);
             console.log(users[usersIndex]);
 
         }
 
 }
 
-setInterval( function(){ update(); } , 1000*60*60);
+// setInterval( function(){ update(); } , 1000*60*60);
+sendler();
 
 api.on('message', async function(message) {
     if((await isBan(message.chat.id)))
@@ -85,7 +91,7 @@ api.on('inline.callback.query', async function(rep) {
         case 'clear': clear(chat); break;
         case 'clear_Groups': clearGroup(chat, _data); break;
 
-        case 'bind': bind(chat, 0); break;
+        case 'bind': bind(chat, 0); break;``
         case 'bind_Deps': bind(chat, 1, _data); break;
         case 'bind_Groups': bind(chat, 2, _data); break;
 
@@ -150,6 +156,56 @@ async function getSchedule(user) {
     }
 }
 
+async function getReplacement(user) {
+    var users = await db.getGroupsByUser(user.id);
+
+    for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
+
+        let schedule = new Array();
+        let schedule_data = await db.getScheduleByGroup(users[usersIndex].idGroup);
+        let replacement_data = await db.getReplacementByGroup(users[usersIndex].idGroup);
+
+        schedule_data.forEach(function (el) {
+            schedule[el.num] = {
+                'cabinet': el.cabinet,
+                'teacher': el.teacher,
+                'subject': el.subject,
+                'date': el.date,
+                'rep': false
+            };
+        });
+
+        replacement_data.forEach(function (el) {
+            schedule[el.num] = {
+                'cabinet': el.cabinet,
+                'teacher': el.teacher,
+                'subject': el.subject,
+                'date': el.date,
+                'rep': true
+            };
+        });
+
+        let text = '';
+
+        schedule.forEach(function (el) {
+            if(el !== null)
+                if(el.rep)
+                    text += '----- Замена -----'
+                text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
+        });
+
+        if(text)
+            api.sendMessage({
+                chat_id: user.id,
+                text: users[usersIndex].nameGroup + '\n---------------\n' + text
+            });
+        else
+            api.sendMessage({
+                chat_id: user.id,
+                text: users[usersIndex].nameGroup + '\n---------------\n' + 'Расписание отсутствуют'
+            });
+    }
+}
 
 async function clear(user) {
 

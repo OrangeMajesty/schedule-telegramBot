@@ -223,8 +223,6 @@ module.exports.decoupling = function (id) {
             con.query('DELETE FROM `tb_user` WHERE `id_user` = ?', id, function (error) {
                 if (err) throw error;
 
-
-
                 connect.release();
                 resolve(true);
             });
@@ -233,7 +231,7 @@ module.exports.decoupling = function (id) {
     });
 };
 
-module.exports.getScheduleByGroup = function (id) {
+module.exports.getReplacementByGroup = function (id) {
     return new Promise(function(resolve) {
         var schedule = [];
         con.getConnection(function(err, connect) {
@@ -245,7 +243,8 @@ module.exports.getScheduleByGroup = function (id) {
                 'inner join tb_time on tb_schedule.id_time = tb_time.id_time ' +
                 'WHERE `date` >= cast((now()) as date) ' +
                 'AND `date` < cast((now() + interval 1 day) as date) ' +
-                'AND `id_group` = ?', id, function (error, result) {
+                'AND `is_replacement` = 1 ' +
+                'AND `id_group` = ? ', id, function (error, result) {
 
                 if (error) throw error;
 
@@ -273,6 +272,49 @@ module.exports.getScheduleByGroup = function (id) {
     });
 };
 
+async function getWeek(id, week) {
+    return new Promise(function(resolve) {
+        let el = {};
+        con.getConnection(function (err, connect) {
+
+            //console.log(id);
+
+            con.query(
+                'SELECT * FROM `tb_schedule` ' +
+                'inner join tb_cabinet on tb_schedule.id_cabinet = tb_cabinet.id_cabinet ' +
+                'inner join tb_teacher on tb_schedule.id_teacher = tb_teacher.id_teacher ' +
+                'inner join tb_subject on tb_schedule.id_subject = tb_subject.id_subject ' +
+                'inner join tb_time on tb_schedule.id_time = tb_time.id_time ' +
+                'WHERE `id_group` = ? AND DAYOFWEEK(`date`) = ? ORDER BY `date` DESC', [id, week], function (error, result) {
+
+                if (error) throw error;
+
+                if (result[0]) {
+                    el.id = result[0].id_schedule;
+                    el.cabinet = result[0].name_cabinet;
+                    el.teacher = result[0].compact_name;
+                    el.subject = result[0].name_subject;
+                    el.date = result[0].time;
+                    el.num = result[0].id_time;
+                }
+
+                connect.release();
+                resolve(el);
+            });
+        });
+    });
+}
+
+module.exports.getScheduleByGroup = async function (id) {
+    var schedule = [];
+
+    for (var index = 2; index != 7; index++)
+        schedule.push(await getWeek(id, index));
+
+    return schedule;
+};
+
+
 module.exports.addUser = function (username, telId, depId) {
     return new Promise(function(resolve) {
         con.getConnection(function(err, connect) {
@@ -289,4 +331,3 @@ module.exports.addUser = function (username, telId, depId) {
 
     });
 };
-
