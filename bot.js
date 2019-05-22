@@ -185,6 +185,12 @@ async function getReplacement(user) {
 
     var users = await db.getGroupsByUser(user.id);
 
+    if(users.length === 0)
+        api.sendMessage({
+            chat_id: user.id,
+            text: 'Нет привязанной группы'
+        });
+
     for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
 
         let schedule = new Array();
