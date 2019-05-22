@@ -127,6 +127,26 @@ module.exports.getGroupsById = function (id) {
     });
 };
 
+module.exports.getBannedUserById = function (id) {
+    return new Promise(function(resolve) {
+        var users = false;
+
+        con.getConnection(function(err, connect) {
+            con.query('SELECT * FROM `tb_user` WHERE `id_telegram` = ? AND `status` = 1', id, function (error, result) {
+
+                if (err) throw err;
+
+                if (result[0])
+                    users = true;
+
+                connect.release();
+                resolve(users);
+            });
+        });
+
+    });
+};
+
 module.exports.getUsers = function () {
     return new Promise(function(resolve) {
         var users = [];
@@ -189,25 +209,25 @@ module.exports.getGroupsByUser = function (id) {
         con.getConnection(function(err, connect) {
 
 
-                con.query('SELECT * FROM `tb_user`\n' +
-                                'inner join tb_group on tb_user.id_group = tb_group.id_group\n' +
-                                'WHERE `id_telegram` = ?', id, function (error, result) {
+            con.query('SELECT * FROM `tb_user`\n' +
+                'inner join tb_group on tb_user.id_group = tb_group.id_group\n' +
+                'WHERE `id_telegram` = ?', id, function (error, result) {
 
-                    if (error) throw error;
-                    if (result)
-                        for (var i = 0; i !== result.length; i++) {
+                if (error) throw error;
+                if (result)
+                    for (var i = 0; i !== result.length; i++) {
 
-                            let i_dep = {};
+                        let i_dep = {};
 
-                            i_dep.id = result[i].id_user;
-                            i_dep.name = result[i].user_name;
-                            i_dep.idTel = result[i].id_telegram ;
-                            i_dep.nameGroup = result[i].name_group ;
-                            i_dep.idGroup = result[i].id_group ;
-                            i_dep.class = 'Groups';
+                        i_dep.id = result[i].id_user;
+                        i_dep.name = result[i].user_name;
+                        i_dep.idTel = result[i].id_telegram ;
+                        i_dep.nameGroup = result[i].name_group ;
+                        i_dep.idGroup = result[i].id_group ;
+                        i_dep.class = 'Groups';
 
-                            deps.push(i_dep);
-                        }
+                        deps.push(i_dep);
+                    }
                 connect.release();
                 resolve(deps);
             });
@@ -317,8 +337,6 @@ module.exports.getScheduleByGroup = async function (id) {
                 });
         });
     });
-
-
 };
 
 

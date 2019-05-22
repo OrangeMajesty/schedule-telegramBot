@@ -5,7 +5,7 @@ var db = require('./db.js');
 
 var updateHour = 18;
 
-
+console.log('Telergam bot Успешно запущен');
 
 var api = new telegram({
     token: token.id,
@@ -90,7 +90,7 @@ api.on('inline.callback.query', async function(rep) {
         case 'clear': clear(chat); break;
         case 'clear_Groups': clearGroup(chat, _data); break;
 
-        case 'bind': bind(chat, 0); break;``
+        case 'bind': bind(chat, 0); break;
         case 'bind_Deps': bind(chat, 1, _data); break;
         case 'bind_Groups': bind(chat, 2, _data); break;
 
@@ -103,11 +103,9 @@ api.on('inline.callback.query', async function(rep) {
 
 async function isBan(id) {
 
-    var ban = {
-        // 419883796: true
-    };
-
-    if(ban[id]) {
+    var ban = await db.getBannedUserById(id);
+    console.log('baned:', ban);
+    if(ban === true) {
         api.sendMessage({
             chat_id: id,
             text: "Бан!"
@@ -196,7 +194,7 @@ async function getReplacement(user) {
             if(el !== null)
                 if(el.rep)
                     text += '----- Замена -----'
-                text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
+            text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
         });
 
         if(text)
