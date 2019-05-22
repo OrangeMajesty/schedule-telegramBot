@@ -3,14 +3,18 @@ var security = require('./config');
 
 var con = mysql.createPool(security);
 
+/// Получение отделений
 module.exports.getDeps = function () {
     return new Promise(function(resolve) {
         var deps = [];
 
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             con.query('SELECT * FROM tb_department', function(error, result){
 
-                if (err) throw error;
+                if (error) throw error;
 
                 if(result)
                     for (var i = 0; i !== result.length; i++){
@@ -34,14 +38,18 @@ module.exports.getDeps = function () {
     });
 };
 
+/// Получение групп
 module.exports.getGroups = function () {
     return new Promise(function(resolve) {
         var deps = [];
 
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             con.query('SELECT * FROM tb_group', function (error, result) {
 
-                if (err) throw error;
+                if (error) throw error;
 
                 if (result)
                     for (var i = 0; i !== result.length; i++) {
@@ -63,14 +71,18 @@ module.exports.getGroups = function () {
     });
 };
 
+/// Получение групп в отделениях
 module.exports.getGroupsByDep = function (id) {
     return new Promise(function(resolve) {
         var deps = [];
 
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             con.query('SELECT * FROM tb_group WHERE `id_department` = ?', id, function (error, result) {
 
-                if (err) throw err;
+                if (error) throw error;
 
                 if (result)
                     for (var i = 0; i !== result.length; i++) {
@@ -92,14 +104,18 @@ module.exports.getGroupsByDep = function (id) {
     });
 };
 
+/// Получение группы по id
 module.exports.getGroupsById = function (id) {
     return new Promise(function(resolve) {
         var deps = [];
 
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             con.query('SELECT * FROM tb_group WHERE `id_group` = ?', id, function (error, result) {
 
-                if (err) throw err;
+                if (error) throw error;
 
                 if (result)
                     for (var i = 0; i !== result.length; i++) {
@@ -121,14 +137,18 @@ module.exports.getGroupsById = function (id) {
     });
 };
 
+/// Получение заблокированного пользователя по id
 module.exports.getBannedUserById = function (id) {
     return new Promise(function(resolve) {
         var users = false;
 
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             con.query('SELECT * FROM `tb_user` WHERE `id_telegram` = ? AND `status` = 1', id, function (error, result) {
 
-                if (err) throw err;
+                if (error) throw error;
 
                 if (result[0])
                     users = true;
@@ -141,14 +161,18 @@ module.exports.getBannedUserById = function (id) {
     });
 };
 
+/// Получение пользователей
 module.exports.getUsers = function () {
     return new Promise(function(resolve) {
         var users = [];
 
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             con.query('SELECT * FROM `tb_user`', '', function (error, result) {
 
-                if (err) throw err;
+                if (error) throw error;
 
                 if (result)
                     for (var i = 0; i !== result.length; i++) {
@@ -170,14 +194,18 @@ module.exports.getUsers = function () {
     });
 };
 
+/// Получение пользователя по telegram id
 module.exports.getUsersId = function () {
     return new Promise(function(resolve) {
         var users = [];
 
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             con.query('SELECT `id_telegram` FROM `tb_user` GROUP BY `id_telegram`', '', function (error, result) {
 
-                if (err) throw error;
+                if (error) throw error;
 
                 if (result)
                     for (var i = 0; i !== result.length; i++) {
@@ -196,12 +224,14 @@ module.exports.getUsersId = function () {
     });
 };
 
+/// Получение привязанных групп к пользователю по id
 module.exports.getGroupsByUser = function (id) {
     return new Promise(function(resolve) {
         var deps = [];
 
         con.getConnection(function(err, connect) {
 
+            if (err) throw err;
 
             con.query('SELECT * FROM `tb_user`\n' +
                 'inner join tb_group on tb_user.id_group = tb_group.id_group\n' +
@@ -230,12 +260,15 @@ module.exports.getGroupsByUser = function (id) {
     });
 };
 
+/// Отвязка группы
 module.exports.decoupling = function (id) {
     return new Promise(function(resolve) {
         con.getConnection(function(err, connect) {
 
+            if (err) throw err;
+
             con.query('DELETE FROM `tb_user` WHERE `id_user` = ?', id, function (error) {
-                if (err) throw error;
+                if (error) throw error;
 
                 connect.release();
                 resolve(true);
@@ -245,16 +278,21 @@ module.exports.decoupling = function (id) {
     });
 };
 
+/// Доп. функция.
+/// Получение номера текущей недели.
 function getNowWeek() {
     const weeks = {"Wed":4, "Thu":5, "Fri":6, "Sat":7, "Sun":1, "Mon":2, "Tue":3};
     const day = (new Date()).toUTCString().split(',')[0];
     return weeks[day];
 }
 
+/// Получение замены не текущую дату
 module.exports.getReplacementByGroup = function (id) {
     return new Promise(function(resolve) {
         var schedule = [];
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
 
             con.query('SELECT * FROM `tb_schedule` ' +
                 'inner join tb_cabinet on tb_schedule.id_cabinet = tb_cabinet.id_cabinet ' +
@@ -291,11 +329,15 @@ module.exports.getReplacementByGroup = function (id) {
     });
 };
 
+/// todo: может быть полее 3-х элементов в рассписании на день.
+/// Получение рассписания
 module.exports.getScheduleByGroup = async function (id) {
 
     return new Promise(function(resolve) {
         var schedule = [];
         con.getConnection(function (err, connect) {
+
+            if (err) throw err;
 
             var week = getNowWeek();
 
@@ -333,18 +375,22 @@ module.exports.getScheduleByGroup = async function (id) {
     });
 };
 
-
+/// Добавление пользователя
 module.exports.addUser = function (username, telId, depId) {
     return new Promise(function(resolve) {
         con.getConnection(function(err, connect) {
+
+            if (err) throw err;
+
             let setData = [username, telId, depId];
 
             con.query('INSERT INTO `tb_user` (`id_user`, `user_name`, `id_telegram`, `id_group`) VALUES (NULL, ?, ?, ?);', setData, function (error) {
 
-                if (err) throw error;
+                if (error) throw error;
 
                 connect.release();
                 resolve(true);
+
             });
         });
 
