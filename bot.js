@@ -2,9 +2,10 @@ var telegram = require('telegram-bot-api');
 var token = require('./token');
 var db = require('./db.js');
 
+/// Рассылка каждый 18:xx час
 var updateHour = 18;
 
-console.log('Telergam bot Успешно запущен');
+log('Telergam bot Успешно запущен');
 
 var api = new telegram({
     token: token.id,
@@ -14,16 +15,29 @@ var api = new telegram({
     }
 });
 
-async function update(){
+/// Обертка для логирования
+function log(message) {
+    console.log(
+        '[' +
+        (new Date).toUTCString() +
+        '] : ' +
+        message
+    );
+}
+
+/// Проверка необходимости рассылки
+async function update() {
 
     var now = new Date();
 
     if(now.getHours() == updateHour)
         sendler();
-
 }
 
+/// Рассылка всем подписаным
 async function sendler() {
+
+    log('Отправка рассписания с заменой');
 
     let users = await db.getUsersId();
 
@@ -36,12 +50,12 @@ async function sendler() {
 
 }
 
-setInterval( function(){ update(); } , 1000*60*60);
-// sendler();
-
+/// Обработка получения сообщений
 api.on('message', async function(message) {
     if((await isBan(message.chat.id)))
         return;
+
+    log('Получено сообщение от пользователя: \'' + message.chat.id + '\'');
 
     var startButton = {
         inline_keyboard: [
@@ -72,6 +86,7 @@ api.on('message', async function(message) {
 
 });
 
+/// Обработка нажатия кнопки
 api.on('inline.callback.query', async function(rep) {
     if((await isBan(rep.message.chat.id)))
         return;
@@ -81,30 +96,31 @@ api.on('inline.callback.query', async function(rep) {
 
     var chat = rep.message.chat;
 
-    console.log(_case);
-
     switch(_case) {
-        case 'config': config(chat); break;
 
+        /// Этапы отвязки групп
         case 'clear': clear(chat); break;
         case 'clear_Groups': clearGroup(chat, _data); break;
 
+        /// Этапы привязки групп
         case 'bind': bind(chat, 0); break;
         case 'bind_Deps': bind(chat, 1, _data); break;
         case 'bind_Groups': bind(chat, 2, _data); break;
 
-        case 'getSchedule': getSchedule(chat); break;
-
-        default: help(chat);
+        /// Получение рассписания без замен
+        case 'getSchedule': getReplacement(chat); break;
     }
 
 });
 
+/// Проверка блокировки пользователя
 async function isBan(id) {
 
     var ban = await db.getBannedUserById(id);
 
-    console.log('Получение статуса пользователя: ', (ban) ? 'Заблокирован' : 'Свободный');
+    log('Получение статуса пользователя \'' + id + '\': ' +
+        ((ban === true) ? 'Зпрещен' : 'Разрешен')
+    );
 
     if(ban === true) {
         api.sendMessage({
@@ -116,7 +132,10 @@ async function isBan(id) {
     return false;
 }
 
+/// Получение рассписания без замен
 async function getSchedule(user) {
+
+    log('Пользователь \'' + user.id + '\' запрашивает рассписание.');
 
     var users = await db.getGroupsByUser(user.id);
 
@@ -159,7 +178,11 @@ async function getSchedule(user) {
         });
 }
 
+/// Получение рассписания с заменами
 async function getReplacement(user) {
+
+    log('Пользователь \'' + user.id + '\' запрашивает рассписание с заменой.');
+
     var users = await db.getGroupsByUser(user.id);
 
     for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
@@ -211,6 +234,7 @@ async function getReplacement(user) {
     }
 }
 
+/// Первый этап отвязки группы
 async function clear(user) {
 
     let users = await db.getGroupsByUser(user.id);
@@ -243,26 +267,53 @@ async function clear(user) {
     });
 }
 
+/// Последный этап отвязки группы
 async function clearGroup(user, idGroup) {
 
-    await db.decoupling(idGroup);
+    let users = await db.getGroupsByUser(user.id);
 
-    api.sendMessage({
-        chat_id: user.id,
-        text: "Вы отвязали группу"
-    });
+    let flagDub = true;
+
+    /// Проверка на дубликат
+    if(users.length)
+        for(let i = 0; i !== users.length; i++) {
+            if (users[i].id === parseInt(idGroup)) {
+                flagDub = false;
+            }
+        }
+
+    if(flagDub === false) {
+        log('Пользователь \'' + user.id + '\' отвязал группу c id: ' + idGroup + '.');
+        await db.decoupling(idGroup);
+        api.sendMessage({
+            chat_id: user.id,
+            text: "Вы отвязали группу."
+        });
+
+    } else {
+        log('Пользователь \'' + user.id + '\' пылтался отвязать не привязанную группу c id: ' + idGroup + '.');
+        api.sendMessage({
+            chat_id: user.id,
+            text: "Данная группа не привязана."
+        });
+    }
 }
 
+/// Привязка пользователя к группе (по этапно)
 async function bind(user, level, data = null) {
 
     switch(level) {
+
+        /// Привязка
         case 2:
+
+            log('Пользователь \'' + user.id + '\' привязвл группу c id: ' + data + '.');
 
             let users = await db.getGroupsByUser(user.id);
 
             let flagDub = true;
 
-            // Проверка на дубликат
+            /// Проверка на дубликат
             if(users.length)
                 for(let i = 0; i !== users.length; i++) {
                     if (users[i].idGroup === parseInt(data)) {
@@ -282,7 +333,7 @@ async function bind(user, level, data = null) {
             }
 
             if(flagDub === true) {
-                db.addUser(username, user.id, data);
+                await db.addUser(username, user.id, data);
                 api.sendMessage({
                     chat_id: user.id,
                     text: "Вы успешно привязаны к группе."
@@ -295,6 +346,8 @@ async function bind(user, level, data = null) {
             }
 
             break;
+
+        /// Выбор группы
         case 1:{
             console.log(data);
             let groups = await db.getGroupsByDep(data);
@@ -327,6 +380,8 @@ async function bind(user, level, data = null) {
             });
             break;
         }
+
+        /// Выбор отделения
         case 0:{
             console.log(user);
             let deps = await db.getDeps();
@@ -356,3 +411,6 @@ async function bind(user, level, data = null) {
     }
 
 }
+
+/// Таймер отправки рассылки.
+setInterval( function(){ update(); } , 1000*60*60);
