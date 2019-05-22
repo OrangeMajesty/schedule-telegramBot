@@ -2,7 +2,6 @@ var telegram = require('telegram-bot-api');
 var token = require('./token');
 var db = require('./db.js');
 
-
 var updateHour = 18;
 
 console.log('Telergam bot Успешно запущен');
@@ -104,7 +103,9 @@ api.on('inline.callback.query', async function(rep) {
 async function isBan(id) {
 
     var ban = await db.getBannedUserById(id);
-    console.log('baned:', ban);
+
+    console.log('Получение статуса пользователя: ', (ban) ? 'Заблокирован' : 'Свободный');
+
     if(ban === true) {
         api.sendMessage({
             chat_id: id,

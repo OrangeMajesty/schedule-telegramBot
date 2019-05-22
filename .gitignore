@@ -60,5 +60,6 @@ typings/
 # next.js build output
 .next
 
-# token.js protected info
+# protected info
 token.json
+config.js

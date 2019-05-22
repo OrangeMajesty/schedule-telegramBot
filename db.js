@@ -1,13 +1,7 @@
 var mysql = require('mysql');
+var security = require('./config');
 
-var con = mysql.createPool({
-    host    : "localhost",
-    user    : "root",
-    port    : '3307',
-    password: "root1234",
-    database: 'ahpc-edu'
-});
-
+var con = mysql.createPool(security);
 
 module.exports.getDeps = function () {
     return new Promise(function(resolve) {
