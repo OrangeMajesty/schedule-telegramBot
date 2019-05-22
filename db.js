@@ -231,13 +231,20 @@ module.exports.decoupling = function (id) {
     });
 };
 
+function getNowWeek() {
+    const weeks = {"Wed":4, "Thu":5, "Fri":6, "Sat":7, "Sun":1, "Mon":2, "Tue":3};
+    const day = (new Date()).toUTCString().split(',')[0];
+    return weeks[day];
+}
+
 module.exports.getReplacementByGroup = function (id) {
     return new Promise(function(resolve) {
         var schedule = [];
         con.getConnection(function(err, connect) {
 
             console.log(id);
-            con.query('SELECT * FROM `tb_schedule` inner join tb_cabinet on tb_schedule.id_cabinet = tb_cabinet.id_cabinet ' +
+            con.query('SELECT * FROM `tb_schedule` ' +
+                'inner join tb_cabinet on tb_schedule.id_cabinet = tb_cabinet.id_cabinet ' +
                 'inner join tb_teacher on tb_schedule.id_teacher = tb_teacher.id_teacher ' +
                 'inner join tb_subject on tb_schedule.id_subject = tb_subject.id_subject ' +
                 'inner join tb_time on tb_schedule.id_time = tb_time.id_time ' +
@@ -259,7 +266,6 @@ module.exports.getReplacementByGroup = function (id) {
                         el.subject = result[i].name_subject ;
                         el.date = result[i].time ;
                         el.num = result[i].id_time ;
-                        // el.class = 'Groups';
 
                         schedule.push(el);
                     }
@@ -272,12 +278,14 @@ module.exports.getReplacementByGroup = function (id) {
     });
 };
 
-async function getWeek(id, week) {
+module.exports.getScheduleByGroup = async function (id) {
+
+
     return new Promise(function(resolve) {
-        let el = {};
+        var schedule = [];
         con.getConnection(function (err, connect) {
 
-            //console.log(id);
+            var week = getNowWeek();
 
             con.query(
                 'SELECT * FROM `tb_schedule` ' +
@@ -285,33 +293,34 @@ async function getWeek(id, week) {
                 'inner join tb_teacher on tb_schedule.id_teacher = tb_teacher.id_teacher ' +
                 'inner join tb_subject on tb_schedule.id_subject = tb_subject.id_subject ' +
                 'inner join tb_time on tb_schedule.id_time = tb_time.id_time ' +
-                'WHERE `id_group` = ? AND DAYOFWEEK(`date`) = ? ORDER BY `date` DESC', [id, week], function (error, result) {
+                'WHERE `id_group` = ? ' +
+                'AND DAYOFWEEK(`date`) = ? ' +
+                'AND `is_replacement` = 0 ' +
+                'ORDER BY `date` DESC LIMIT 3', [id, week], function (error, result) {
 
-                if (error) throw error;
+                    if (error) throw error;
 
-                if (result[0]) {
-                    el.id = result[0].id_schedule;
-                    el.cabinet = result[0].name_cabinet;
-                    el.teacher = result[0].compact_name;
-                    el.subject = result[0].name_subject;
-                    el.date = result[0].time;
-                    el.num = result[0].id_time;
-                }
+                    if (result)
+                        for (var i = 0; i !== result.length; i++) {
+                            let el = {};
 
-                connect.release();
-                resolve(el);
-            });
+                            el.id = result[i].id_schedule;
+                            el.cabinet = result[i].name_cabinet;
+                            el.teacher = result[i].compact_name;
+                            el.subject = result[i].name_subject;
+                            el.date = result[i].time;
+                            el.num = result[i].id_time;
+
+                            schedule.push(el);
+                        }
+
+                    connect.release();
+                    resolve(schedule);
+                });
         });
     });
-}
 
-module.exports.getScheduleByGroup = async function (id) {
-    var schedule = [];
 
-    for (var index = 2; index != 7; index++)
-        schedule.push(await getWeek(id, index));
-
-    return schedule;
 };
 
 

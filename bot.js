@@ -176,13 +176,14 @@ async function getReplacement(user) {
         });
 
         replacement_data.forEach(function (el) {
-            schedule[el.num] = {
-                'cabinet': el.cabinet,
-                'teacher': el.teacher,
-                'subject': el.subject,
-                'date': el.date,
-                'rep': true
-            };
+            if(el)
+                schedule[el.num] = {
+                    'cabinet': el.cabinet,
+                    'teacher': el.teacher,
+                    'subject': el.subject,
+                    'date': el.date,
+                    'rep': true
+                };
         });
 
         let text = '';
