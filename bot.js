@@ -21,7 +21,6 @@ async function update(){
 
     if(now.getHours() == updateHour)
         sendler();
-    // Фильтрация по неделям
 
 }
 
@@ -38,8 +37,8 @@ async function sendler() {
 
 }
 
-// setInterval( function(){ update(); } , 1000*60*60);
-sendler();
+setInterval( function(){ update(); } , 1000*60*60);
+// sendler();
 
 api.on('message', async function(message) {
     if((await isBan(message.chat.id)))

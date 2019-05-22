@@ -242,7 +242,6 @@ module.exports.getReplacementByGroup = function (id) {
         var schedule = [];
         con.getConnection(function(err, connect) {
 
-            console.log(id);
             con.query('SELECT * FROM `tb_schedule` ' +
                 'inner join tb_cabinet on tb_schedule.id_cabinet = tb_cabinet.id_cabinet ' +
                 'inner join tb_teacher on tb_schedule.id_teacher = tb_teacher.id_teacher ' +
@@ -279,7 +278,6 @@ module.exports.getReplacementByGroup = function (id) {
 };
 
 module.exports.getScheduleByGroup = async function (id) {
-
 
     return new Promise(function(resolve) {
         var schedule = [];
