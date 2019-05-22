@@ -153,6 +153,11 @@ async function getSchedule(user) {
                 text: users[usersIndex].nameGroup + '\n---------------\n' + 'Расписание отсутствует'
             });
     }
+    if(users.length === 0)
+        api.sendMessage({
+            chat_id: user.id,
+            text: 'У вас нет привязанной группы.'
+        });
 }
 
 async function getReplacement(user) {
