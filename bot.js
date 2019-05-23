@@ -44,8 +44,7 @@ async function sendler() {
     if(users)
         for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
             await getReplacement(users[usersIndex]);
-            console.log(users[usersIndex]);
-
+            await getScheduleForTeacher(users[usersIndex]);
         }
 
 }
@@ -62,7 +61,7 @@ api.on('message', async function(message) {
             [
                 {
                     text: 'Получить расписание',
-                    callback_data: 'getSchedule'
+                    callback_data: 'get_Schedule'
                 }
             ],
             [
@@ -73,6 +72,12 @@ api.on('message', async function(message) {
                 {
                     text: 'Отвязать группу',
                     callback_data: 'clear'
+                }
+            ],
+            [
+                {
+                    text: 'Дополнительно',
+                    callback_data: 'get_Other'
                 }
             ]
         ]
@@ -96,19 +101,37 @@ api.on('inline.callback.query', async function(rep) {
 
     var chat = rep.message.chat;
 
+    console.log(_case);
+    console.log(_data);
+
     switch(_case) {
 
-        /// Этапы отвязки групп
+        /// Этапы отписки от группы
         case 'clear': clear(chat); break;
         case 'clear_Groups': clearGroup(chat, _data); break;
 
-        /// Этапы привязки групп
+        /// Этапы отписки от преподавателя
+        case 'clear_Teacher': clearTeacher(chat); break;
+        case 'clear_Teachers_Teachers': clearTeacher(chat, _data); break;
+
+        /// Этапы подписки групп
         case 'bind': bind(chat, 0); break;
         case 'bind_Deps': bind(chat, 1, _data); break;
         case 'bind_Groups': bind(chat, 2, _data); break;
 
+        /// Этапы подписки преподавателей
+        case 'bind_Teacher': bindTeacher(chat, 0); break;
+        case 'bind_Teacher_Deps': bindTeacher(chat, 1, _data); break;
+        case 'bind_Teacher_In_Teachers': bindTeacher(chat, 2, _data); break;
+
         /// Получение рассписания без замен
-        case 'getSchedule': getReplacement(chat); break;
+        case 'get_Schedule':
+            getReplacement(chat);
+            getScheduleForTeacher(chat);
+            break;
+
+        /// Получение доп. функций
+        case 'get_Other': getOther(chat); break;
     }
 
 });
@@ -125,11 +148,40 @@ async function isBan(id) {
     if(ban === true) {
         api.sendMessage({
             chat_id: id,
-            text: "Бан!"
+            text: "Вы заблокированы!"
         });
         return true;
     }
     return false;
+}
+
+/// Получение дополнительных функций
+async function getOther(user) {
+    log('Пользователь \'' + user.id + '\' запрашивает доп. функции.');
+
+    var buttons = {
+        inline_keyboard: [
+            [
+                {
+                    text: 'Подписаться на преподавателя',
+                    callback_data: 'bind_Teacher'
+                }
+            ],
+            [
+                {
+                    text: 'Отписаться от преподавателя',
+                    callback_data: 'clear_Teacher'
+                }
+            ]
+        ]
+    };
+
+    api.sendMessage({
+        chat_id: user.id,
+        text: "Выберите команду",
+        reply_markup: JSON.stringify(buttons)
+    });
+
 }
 
 /// Получение рассписания без замен
@@ -178,6 +230,60 @@ async function getSchedule(user) {
         });
 }
 
+/// Получение рассписания для преподавателей
+async function getScheduleForTeacher(user) {
+
+    log('Пользователь \'' + user.id + '\' запрашивает рассписание с заменой.');
+
+
+    var users = await db.getTeachersByUser(user.id);
+
+    console.log(users);
+
+    if(users.length === 0)
+        api.sendMessage({
+            chat_id: user.id,
+            text: 'Вы не подписаны на преподавателей'
+        });
+
+    for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
+
+        let schedule = new Array();
+        let schedule_data = await db.getScheduleByGroupTeacher(users[usersIndex].idTeacher);
+        let teacherName = null;
+
+        schedule_data.forEach(function (el) {
+
+            if(teacherName === null)
+                teacherName = el.teacher;
+
+            schedule[el.num] = {
+                'cabinet': el.cabinet,
+                'teacher': el.teacher,
+                'subject': el.subject,
+                'date': el.date,
+                'rep': false
+            };
+        });
+
+        let text = '';
+
+        schedule.forEach(function (el) {
+            if(el !== null) {
+                if (el.rep)
+                    text += '----- Замена -----'
+                text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
+            }
+        });
+
+        if(text)
+            api.sendMessage({
+                chat_id: user.id,
+                text: 'Рассписание для ' + teacherName + '\n\n' + text
+            });
+    }
+}
+
 /// Получение рассписания с заменами
 async function getReplacement(user) {
 
@@ -221,10 +327,11 @@ async function getReplacement(user) {
         let text = '';
 
         schedule.forEach(function (el) {
-            if(el !== null)
-                if(el.rep)
+            if(el !== null) {
+                if (el.rep)
                     text += '----- Замена -----'
-            text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
+                text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
+            }
         });
 
         if(text)
@@ -296,19 +403,188 @@ async function clearGroup(user, idGroup) {
         }
 
     if(flagDub === false) {
-        log('Пользователь \'' + user.id + '\' отвязал группу c id: ' + idGroup + '.');
+        log('Пользователь \'' + user.id + '\' отписался от группы c id: ' + idGroup + '.');
         await db.decoupling(idGroup);
         api.sendMessage({
             chat_id: user.id,
-            text: "Вы отвязали группу."
+            text: "Вы отписались."
         });
 
     } else {
-        log('Пользователь \'' + user.id + '\' пылтался отвязать не привязанную группу c id: ' + idGroup + '.');
+        log('Пользователь \'' + user.id + '\' пытался отписаться от привязанной группы c id: ' + idGroup + '.');
         api.sendMessage({
             chat_id: user.id,
-            text: "Данная группа не привязана."
+            text: "Вы не подписаны на данную группу."
         });
+    }
+}
+
+/// Отписка от преподавателя
+async function clearTeacher(user, id = 0) {
+
+    let teacher = await db.getTeachersByUser(user.id);
+
+    if(id !== 0) {
+        let flagDub = true;
+
+        /// Проверка на дубликат
+        if(teacher.length)
+            for(let i = 0; i !== teacher.length; i++) {
+                if (teacher[i].id === parseInt(id)) {
+                    flagDub = false;
+                }
+            }
+
+        if(flagDub === false) {
+            log('Пользователь \'' + user.id + '\' отписался от преподавателя c id: ' + id + '.');
+            await db.decoupling(id);
+            api.sendMessage({
+                chat_id: user.id,
+                text: "Вы отписались."
+            });
+
+        } else {
+            log('Пользователь \'' + user.id + '\' пытался отписаться от преподавателя c id: ' + id + '.');
+            api.sendMessage({
+                chat_id: user.id,
+                text: "Вы не подписаны на данног преподавателя."
+            });
+        }
+        return;
+    }
+
+    var genButton = {};
+
+    genButton.inline_keyboard = [];
+
+    if(teacher.length === 0) {
+        api.sendMessage({
+            chat_id: user.id,
+            text: 'Вы не подписаны на преподавателей.'
+        });
+    } else {
+        for (var teacherIndex = 0; teacherIndex !== teacher.length; teacherIndex++) {
+
+            var tempButton = {};
+
+            tempButton.text = teacher[teacherIndex].nameTeacher;
+            tempButton.callback_data = 'clear_Teachers_' + teacher[teacherIndex].class + ':' + teacher[teacherIndex].id;
+
+            genButton.inline_keyboard.push([]);
+            genButton.inline_keyboard[teacherIndex].push(tempButton);
+        }
+
+        api.sendMessage({
+            chat_id: user.id,
+            text: "Выберите преподавателя",
+            reply_markup: JSON.stringify(genButton)
+        });
+    }
+}
+
+/// Привязка пользователя к преподаветелю (по этапно)
+async function bindTeacher(user, level, data) {
+
+    switch (level) {
+
+        /// Подписка на преподавателя
+        case 2: {
+
+            log('Пользователь \'' + user.id + '\' подписался на преподавателя c id: ' + data + '.');
+
+            let teachers = await db.getTeachersByUser(user.id);
+
+            let flagDub = true;
+
+            /// Проверка на дубликат
+            if(teachers.length)
+                for(let i = 0; i !== teachers.length; i++) {
+                    if (teachers[i].idTeacher === parseInt(data)) {
+                        flagDub = false;
+                    }
+                }
+
+            let username = null;
+
+            if(user.username) {
+                username = user.username;
+            }  else {
+                if(user.first_name)
+                    username = user.first_name;
+                if(user.last_name)
+                    username += ' ' + user.last_name;
+            }
+
+            if(flagDub === true) {
+                await db.addUser(username, user.id, 0, data);
+                api.sendMessage({
+                    chat_id: user.id,
+                    text: "Вы подписались на преподавателя."
+                });
+            } else {
+                api.sendMessage({
+                    chat_id: user.id,
+                    text: "Вы уже подписаны."
+                });
+            }
+
+            break;
+        }
+
+        /// Выбор преподавателя
+        case 1: {
+            let teachers = await db.getTeachersByDeps(data);
+
+            var genButton = {};
+
+            genButton.inline_keyboard = [];
+
+            for (var teachersIndex = 0; teachersIndex !== teachers.length; teachersIndex++) {
+
+                var tempButton = {};
+                tempButton.text = teachers[teachersIndex].name;
+
+                tempButton.callback_data = 'bind_Teacher_In_' + teachers[teachersIndex].class + ':' + teachers[teachersIndex].id;
+                genButton.inline_keyboard.push([]);
+                genButton.inline_keyboard[teachersIndex].push(tempButton);
+            }
+
+            api.sendMessage({
+                chat_id: user.id,
+                text: "Выберите преподавателя",
+                reply_markup: JSON.stringify(genButton)
+            });
+
+            break;
+        }
+
+        /// Выбор отделения
+        case 0: {
+
+            let deps = await db.getDeps();
+
+            var genButton = {};
+
+            genButton.inline_keyboard = [];
+
+            for (var depsIndex = 0; depsIndex !== deps.length; depsIndex++) {
+
+                var tempButton = {};
+                tempButton.text = deps[depsIndex].name;
+
+                tempButton.callback_data = 'bind_Teacher_' + deps[depsIndex].class + ':' + deps[depsIndex].id;
+                genButton.inline_keyboard.push([]);
+                genButton.inline_keyboard[depsIndex].push(tempButton);
+            }
+
+            api.sendMessage({
+                chat_id: user.id,
+                text: "Выберите отделение",
+                reply_markup: JSON.stringify(genButton)
+            });
+
+            break;
+        }
     }
 }
 
@@ -317,7 +593,7 @@ async function bind(user, level, data = null) {
 
     switch(level) {
 
-        /// Привязка
+        /// Подписка на группу
         case 2:
 
             log('Пользователь \'' + user.id + '\' привязвл группу c id: ' + data + '.');
@@ -396,7 +672,7 @@ async function bind(user, level, data = null) {
 
         /// Выбор отделения
         case 0:{
-            console.log(user);
+
             let deps = await db.getDeps();
 
             var genButton = {};
