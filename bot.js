@@ -101,9 +101,6 @@ api.on('inline.callback.query', async function(rep) {
 
     var chat = rep.message.chat;
 
-    console.log(_case);
-    console.log(_data);
-
     switch(_case) {
 
         /// Этапы отписки от группы
@@ -241,10 +238,7 @@ async function getScheduleForTeacher(user) {
     console.log(users);
 
     if(users.length === 0)
-        api.sendMessage({
-            chat_id: user.id,
-            text: 'Вы не подписаны на преподавателей'
-        });
+        return;
 
     for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
 
