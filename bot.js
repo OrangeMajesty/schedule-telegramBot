@@ -243,7 +243,7 @@ async function getReplacement(user) {
 /// Первый этап отвязки группы
 async function clear(user) {
 
-    let users = await db.getGroupsByUser(user.id);
+    let group = await db.getGroupsByUser(user.id);
 
     var genButton = {};
 
@@ -251,26 +251,33 @@ async function clear(user) {
     genButton.inline_keyboard.push([]);
     let col = 0;
 
-    for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
+    if(group.length === 0) {
+        api.sendMessage({
+            chat_id: user.id,
+            text: 'Нет привязанной группы'
+        });
+    } else {
+        for (var groupIndex = 0; groupIndex !== group.length; groupIndex++) {
 
-        var tempButton = {};
+            var tempButton = {};
 
-        tempButton.text = users[usersIndex].nameGroup;
-        tempButton.callback_data = 'clear_' + users[usersIndex].class + ':' + users[usersIndex].id;
+            tempButton.text = group[groupIndex].nameGroup;
+            tempButton.callback_data = 'clear_' + group[groupIndex].class + ':' + group[groupIndex].id;
 
-        if(usersIndex%4 === 0) {
-            genButton.inline_keyboard.push([]);
-            col++;
+            if (groupIndex % 4 === 0) {
+                genButton.inline_keyboard.push([]);
+                col++;
+            }
+
+            genButton.inline_keyboard[col].push(tempButton);
         }
 
-        genButton.inline_keyboard[col].push(tempButton);
+        api.sendMessage({
+            chat_id: user.id,
+            text: "Выберите группу",
+            reply_markup: JSON.stringify(genButton)
+        });
     }
-
-    api.sendMessage({
-        chat_id: user.id,
-        text: "Выберите группу",
-        reply_markup: JSON.stringify(genButton)
-    });
 }
 
 /// Последный этап отвязки группы
