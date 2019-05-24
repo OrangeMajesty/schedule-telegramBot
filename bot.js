@@ -4,6 +4,8 @@ var db = require('./db.js');
 
 /// Рассылка каждый 18:xx час
 var updateHour = 18;
+/// Использовать четные/не четные недели
+var flagParity = true;
 
 log('Telergam bot Успешно запущен');
 
@@ -47,6 +49,20 @@ async function sendler() {
             await getScheduleForTeacher(users[usersIndex]);
         }
 
+}
+
+function getWeekNumber(d) {
+    // Copy date so don't modify original
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    // Set to nearest Thursday: current date + 4 - current day number
+    // Make Sunday's day number 7
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+    // Get first day of year
+    var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    // Calculate full weeks to nearest Thursday
+    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+    // Return array of year and week number
+    return weekNo;
 }
 
 /// Обработка получения сообщений
@@ -232,13 +248,12 @@ async function getScheduleForTeacher(user) {
 
     log('Пользователь \'' + user.id + '\' запрашивает рассписание с заменой.');
 
-
     var users = await db.getTeachersByUser(user.id);
-
-    console.log(users);
 
     if(users.length === 0)
         return;
+
+    const parity = ((getWeekNumber(new Date()) % 2) === 1) ? 'Числитель' : 'Знаменатель';
 
     for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
 
@@ -273,7 +288,7 @@ async function getScheduleForTeacher(user) {
         if(text)
             api.sendMessage({
                 chat_id: user.id,
-                text: 'Рассписание для ' + teacherName + '\n\n' + text
+                text: parity + '\n\nРассписание для ' + teacherName + '\n\n' + text
             });
     }
 }
@@ -285,11 +300,21 @@ async function getReplacement(user) {
 
     var users = await db.getGroupsByUser(user.id);
 
-    if(users.length === 0)
+    if(users.length === 0) {
         api.sendMessage({
             chat_id: user.id,
             text: 'Нет привязанной группы'
         });
+        return;
+    } else {
+        const parity = ((getWeekNumber(new Date()) % 2) === 0) ? 'Числитель' : 'Знаменатель';
+        api.sendMessage({
+            chat_id: user.id,
+            text: 'Текущая неделя: ' + parity + '\n\n'
+        });
+    }
+
+
 
     for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
 
@@ -323,7 +348,7 @@ async function getReplacement(user) {
         schedule.forEach(function (el) {
             if(el !== null) {
                 if (el.rep)
-                    text += '----- Замена -----'
+                    text += '----- Замена -----\n'
                 text += el.date + '\nКаб:' + el.cabinet + '\n' + el.teacher + '\n' + el.subject + '\n\n';
             }
         });
