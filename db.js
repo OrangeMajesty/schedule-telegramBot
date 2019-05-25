@@ -353,14 +353,6 @@ module.exports.decoupling = function (id) {
     });
 };
 
-/// Доп. функция.
-/// Получение номера текущей недели.
-function getNowWeek() {
-    const weeks = {"Wed":4, "Thu":5, "Fri":6, "Sat":7, "Sun":1, "Mon":2, "Tue":3};
-    const day = (new Date()).toUTCString().split(',')[0];
-    return weeks[day];
-}
-
 /// Получение замены на текущую дату
 module.exports.getReplacementByGroup = function (id) {
     return new Promise(function(resolve) {
@@ -405,7 +397,7 @@ module.exports.getReplacementByGroup = function (id) {
 };
 
 /// Получение рассписания на текущую дату
-module.exports.getScheduleByGroupTeacher = function (id) {
+module.exports.getScheduleByGroupTeacher = function (id, offset = 0) {
     return new Promise(function(resolve) {
         var schedule = [];
         con.getConnection(function(err, connect) {
@@ -417,8 +409,8 @@ module.exports.getScheduleByGroupTeacher = function (id) {
                 'inner join tb_teacher on tb_schedule.id_teacher = tb_teacher.id_teacher ' +
                 'inner join tb_subject on tb_schedule.id_subject = tb_subject.id_subject ' +
                 'inner join tb_time on tb_schedule.id_time = tb_time.id_time ' +
-                'WHERE `date` >= cast((now()) as date) ' +
-                'AND `date` < cast((now() + interval 1 day) as date) ' +
+                'WHERE `date` >= cast((now() + interval 0+' + offset + ' day) as date) ' +
+                'AND `date` < cast((now() + interval 1+' + offset + ' day) as date) ' +
                 'AND tb_schedule.id_teacher = ? ', id, function (error, result) {
 
                 if (error) throw error;
@@ -448,15 +440,13 @@ module.exports.getScheduleByGroupTeacher = function (id) {
 
 /// todo: может быть полее 3-х элементов в рассписании на день.
 /// Получение рассписания
-module.exports.getScheduleByGroup = async function (id) {
+module.exports.getScheduleByGroup = async function (id, week) {
 
     return new Promise(function(resolve) {
         var schedule = [];
         con.getConnection(function (err, connect) {
 
             if (err) throw err;
-
-            var week = getNowWeek();
 
             con.query(
                 'SELECT * FROM `tb_schedule` ' +

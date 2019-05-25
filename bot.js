@@ -4,8 +4,6 @@ var db = require('./db.js');
 
 /// Рассылка каждый 18:xx час
 var updateHour = 18;
-/// Использовать четные/не четные недели
-var flagParity = true;
 
 log('Telergam bot Успешно запущен');
 
@@ -45,8 +43,8 @@ async function sendler() {
 
     if(users)
         for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
-            await getReplacement(users[usersIndex]);
-            await getScheduleForTeacher(users[usersIndex]);
+            await getReplacement(users[usersIndex], 1);
+            await getScheduleForTeacher(users[usersIndex], 1);
         }
 
 }
@@ -139,8 +137,8 @@ api.on('inline.callback.query', async function(rep) {
 
         /// Получение рассписания без замен
         case 'get_Schedule':
-            getReplacement(chat);
-            getScheduleForTeacher(chat);
+            await getReplacement(chat);
+            await getScheduleForTeacher(chat);
             break;
 
         /// Получение доп. функций
@@ -244,7 +242,7 @@ async function getSchedule(user) {
 }
 
 /// Получение рассписания для преподавателей
-async function getScheduleForTeacher(user) {
+async function getScheduleForTeacher(user, date = 0) {
 
     log('Пользователь \'' + user.id + '\' запрашивает рассписание с заменой.');
 
@@ -253,12 +251,12 @@ async function getScheduleForTeacher(user) {
     if(users.length === 0)
         return;
 
-    const parity = ((getWeekNumber(new Date()) % 2) === 1) ? 'Числитель' : 'Знаменатель';
+    // const parity = ((getWeekNumber(new Date()) % 2) === 0) ? 'Числитель' : 'Знаменатель';
 
     for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
 
         let schedule = new Array();
-        let schedule_data = await db.getScheduleByGroupTeacher(users[usersIndex].idTeacher);
+        let schedule_data = await db.getScheduleByGroupTeacher(users[usersIndex].idTeacher, date);
         let teacherName = null;
 
         schedule_data.forEach(function (el) {
@@ -288,13 +286,21 @@ async function getScheduleForTeacher(user) {
         if(text)
             api.sendMessage({
                 chat_id: user.id,
-                text: parity + '\n\nРассписание для ' + teacherName + '\n\n' + text
+                text: 'Рассписание для ' + teacherName + '\n\n' + text
             });
     }
 }
 
+/// Доп. функция.
+/// Получение номера текущей недели.
+function getNowWeek(offset = 0) {
+    const weeks = {"Wed":4, "Thu":5, "Fri":6, "Sat":7, "Sun":1, "Mon":2, "Tue":3};
+    const day = (new Date((new Date()).getTime() + 3840000 * 24 * offset)).toUTCString().split(',')[0];
+    return weeks[day];
+}
+
 /// Получение рассписания с заменами
-async function getReplacement(user) {
+async function getReplacement(user, date = 0) {
 
     log('Пользователь \'' + user.id + '\' запрашивает рассписание с заменой.');
 
@@ -306,20 +312,20 @@ async function getReplacement(user) {
             text: 'Нет привязанной группы'
         });
         return;
-    } else {
-        const parity = ((getWeekNumber(new Date()) % 2) === 0) ? 'Числитель' : 'Знаменатель';
-        api.sendMessage({
-            chat_id: user.id,
-            text: 'Текущая неделя: ' + parity + '\n\n'
-        });
     }
 
+    var week = getNowWeek(date);
 
+    const parity = ((getWeekNumber(new Date()) % 2) === 0) ? 'Числитель' : 'Знаменатель';
+    api.sendMessage({
+        chat_id: user.id,
+        text: 'Текущая неделя: ' + parity + '\n\n'
+    });
 
     for (var usersIndex = 0; usersIndex !== users.length; usersIndex++) {
 
         let schedule = new Array();
-        let schedule_data = await db.getScheduleByGroup(users[usersIndex].idGroup);
+        let schedule_data = await db.getScheduleByGroup(users[usersIndex].idGroup, week);
         let replacement_data = await db.getReplacementByGroup(users[usersIndex].idGroup);
 
         schedule_data.forEach(function (el) {
